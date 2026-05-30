@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0d0d0f" />
+  <meta name="description" content="Phase 10 – Spielregeln und Punkte-Erfassung. Verwalte Spieler, Runden, Phasen und Punkte." />
+  <title>Phase 10 – Punkte &amp; Regeln</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230d0d0f'/%3E%3Ctext x='50' y='68' font-size='52' font-family='Arial' font-weight='bold' fill='%23c8a24b' text-anchor='middle'%3E10%3C/text%3E%3C/svg%3E" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <span class="brand-mark">Phase</span>
+      <span class="brand-badge">10</span>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button class="tab is-active" data-view="game" role="tab">Spiel &amp; Punkte</button>
+      <button class="tab" data-view="rules" role="tab">Spielregeln</button>
+    </nav>
+  </header>
+
+  <main class="app-main">
+    <!-- ============ SPIEL / PUNKTE-ERFASSUNG ============ -->
+    <section id="view-game" class="view is-active">
+
+      <!-- Setup -->
+      <div id="setup" class="card setup">
+        <h2>Neues Spiel</h2>
+        <p class="muted">Trage 2 bis 6 Spieler ein. Jeder startet bei Phase&nbsp;1.</p>
+        <div id="player-inputs" class="player-inputs"></div>
+        <div class="setup-actions">
+          <button id="add-player" class="btn btn-ghost" type="button">+ Spieler</button>
+          <button id="start-game" class="btn btn-primary" type="button">Spiel starten</button>
+        </div>
+      </div>
+
+      <!-- Laufendes Spiel -->
+      <div id="game" class="game hidden">
+        <div id="winner-banner" class="winner-banner hidden"></div>
+
+        <div class="game-toolbar">
+          <div class="round-info">
+            <span class="round-label">Durchgang</span>
+            <span id="round-count" class="round-number">0</span>
+          </div>
+          <div class="toolbar-actions">
+            <button id="new-round" class="btn btn-primary" type="button">+ Runde erfassen</button>
+            <button id="undo-round" class="btn btn-ghost" type="button">Letzte Runde löschen</button>
+            <button id="reset-game" class="btn btn-danger-ghost" type="button">Neues Spiel</button>
+          </div>
+        </div>
+
+        <div class="standings-wrap">
+          <table id="standings" class="standings"></table>
+        </div>
+
+        <h3 class="section-title">Rundenverlauf</h3>
+        <div class="history-wrap">
+          <table id="history" class="history"></table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SPIELREGELN ============ -->
+    <section id="view-rules" class="view">
+      <div id="rules-content" class="rules"></div>
+    </section>
+  </main>
+
+  <!-- ============ RUNDEN-DIALOG ============ -->
+  <dialog id="round-dialog" class="dialog">
+    <form method="dialog" class="dialog-form">
+      <h2 id="round-dialog-title">Runde erfassen</h2>
+      <p class="muted">Trage für jeden Spieler die Restpunkte auf der Hand ein und markiere, wer seine Phase geschafft hat.</p>
+      <div id="round-rows" class="round-rows"></div>
+      <div class="points-help">
+        <strong>Punktewerte:</strong> Karten 1–9 = 5&nbsp;P · Karten 10–12 = 10&nbsp;P · Aussetzen = 15&nbsp;P · Joker = 20&nbsp;P
+      </div>
+      <div class="dialog-actions">
+        <button value="cancel" class="btn btn-ghost" type="submit">Abbrechen</button>
+        <button id="save-round" value="save" class="btn btn-primary" type="submit">Runde speichern</button>
+      </div>
+    </form>
+  </dialog>
+
+  <footer class="app-footer">
+    <span>Phase 10 von Ravensburger · Diese App dient der Punkte-Erfassung &amp; Regelübersicht.</span>
+  </footer>
+
+  <script src="js/rules.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
