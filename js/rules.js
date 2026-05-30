@@ -1,16 +1,16 @@
-/* Phase 10 – Regeln & Phasenliste (nach der Ravensburger Spielanleitung) */
+/* Phase 10 – Regeln & Phasenliste (Original-Anleitung von Ravensburger) */
 
 const PHASES = [
-  { n: 1,  desc: "2 Drillinge",                  sub: "Zwei Sätze mit je 3 gleichen Karten" },
-  { n: 2,  desc: "1 Drilling + 1 Viererfolge",   sub: "3 gleiche Karten + Folge aus 4 Karten" },
-  { n: 3,  desc: "1 Vierling + 1 Viererfolge",   sub: "4 gleiche Karten + Folge aus 4 Karten" },
-  { n: 4,  desc: "1 Siebenerfolge",              sub: "Folge aus 7 aufeinanderfolgenden Karten" },
-  { n: 5,  desc: "1 Achterfolge",                sub: "Folge aus 8 aufeinanderfolgenden Karten" },
-  { n: 6,  desc: "1 Neunerfolge",                sub: "Folge aus 9 aufeinanderfolgenden Karten" },
-  { n: 7,  desc: "2 Vierlinge",                  sub: "Zwei Sätze mit je 4 gleichen Karten" },
-  { n: 8,  desc: "7 Karten einer Farbe",         sub: "Sieben Karten in derselben Farbe" },
-  { n: 9,  desc: "1 Fünfling + 1 Zwilling",      sub: "5 gleiche Karten + 2 gleiche Karten" },
-  { n: 10, desc: "1 Fünfling + 1 Drilling",      sub: "5 gleiche Karten + 3 gleiche Karten" },
+  { n: 1,  desc: "2 Drillinge",                sub: "Zwei Sätze mit je 3 gleichen Karten" },
+  { n: 2,  desc: "1 Drilling + 1 Viererfolge", sub: "3 gleiche Karten + Folge aus 4 Karten" },
+  { n: 3,  desc: "1 Vierling + 1 Viererfolge", sub: "4 gleiche Karten + Folge aus 4 Karten" },
+  { n: 4,  desc: "1 Siebenerfolge",            sub: "Folge aus 7 aufeinanderfolgenden Karten" },
+  { n: 5,  desc: "1 Achterfolge",              sub: "Folge aus 8 aufeinanderfolgenden Karten" },
+  { n: 6,  desc: "1 Neunerfolge",              sub: "Folge aus 9 aufeinanderfolgenden Karten" },
+  { n: 7,  desc: "2 Vierlinge",                sub: "Zwei Sätze mit je 4 gleichen Karten" },
+  { n: 8,  desc: "7 Karten einer Farbe",       sub: "Sieben Karten in derselben Farbe" },
+  { n: 9,  desc: "1 Fünfling + 1 Zwilling",    sub: "5 gleiche Karten + 2 gleiche Karten" },
+  { n: 10, desc: "1 Fünfling + 1 Drilling",    sub: "5 gleiche Karten + 3 gleiche Karten" },
 ];
 
 const SCORE_VALUES = [

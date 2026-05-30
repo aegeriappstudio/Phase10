@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0d0d0f" />
+  <meta name="description" content="Phase 10 – Spielregeln und Punkte-Erfassung. Verwalte Spieler, Runden, Phasen und Punkte." />
+  <title>Phase 10 – Punkte &amp; Regeln</title>
+  <style>
+:root {
+  --bg: #0d0d0f;
+  --bg-2: #16161a;
+  --card: #1d1d22;
+  --card-2: #25252c;
+  --line: #34343d;
+  --text: #f1f1f4;
+  --muted: #9a9aa6;
+  --gold: #c8a24b;
+  --gold-2: #e3c178;
+  --red: #d8453b;
+  --blue: #3d7de0;
+  --green: #36a566;
+  --shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+  --radius: 14px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: radial-gradient(120% 80% at 50% -10%, #1b1b22 0%, var(--bg) 55%);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Header ---------- */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(13, 13, 15, 0.85);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+  padding: 12px 16px 0;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+.brand-mark {
+  font-family: "Brush Script MT", "Segoe Script", cursive;
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.5px;
+}
+.brand-badge {
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, var(--gold-2), var(--gold) 60%, #8a6b25);
+  color: #1a1408;
+  font-weight: 800;
+  font-size: 18px;
+  border: 2px solid #2a2a30;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.15);
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  max-width: 640px;
+  margin: 0 auto;
+}
+.tab {
+  flex: 1;
+  appearance: none;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 600;
+  padding: 12px 8px;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+.tab.is-active { color: var(--text); border-bottom-color: var(--gold); }
+.tab:hover { color: var(--text); }
+
+/* ---------- Layout ---------- */
+.app-main {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 18px 14px 40px;
+}
+.view { display: none; animation: fade 0.2s ease; }
+.view.is-active { display: block; }
+@keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+.hidden { display: none !important; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+.muted { color: var(--muted); font-size: 14px; line-height: 1.5; }
+.section-title {
+  margin: 26px 0 10px;
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--gold);
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+  appearance: none;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 11px 16px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.08s, filter 0.15s, background 0.15s;
+}
+.btn:active { transform: translateY(1px); }
+.btn-primary { background: linear-gradient(180deg, var(--gold-2), var(--gold)); color: #1a1408; }
+.btn-primary:hover { filter: brightness(1.06); }
+.btn-ghost { background: var(--card-2); color: var(--text); border-color: var(--line); }
+.btn-ghost:hover { background: #2f2f37; }
+.btn-danger-ghost { background: transparent; color: var(--red); border-color: rgba(216, 69, 59, 0.4); }
+.btn-danger-ghost:hover { background: rgba(216, 69, 59, 0.12); }
+
+/* ---------- Setup ---------- */
+.setup h2 { margin: 0 0 6px; }
+.player-inputs { display: flex; flex-direction: column; gap: 10px; margin: 16px 0; }
+.player-row { display: flex; align-items: center; gap: 10px; }
+.player-row .seat {
+  width: 30px; height: 30px; flex: 0 0 auto;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: var(--card-2); color: var(--gold);
+  font-weight: 700; font-size: 14px;
+}
+.player-row input {
+  flex: 1;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 11px 12px;
+  color: var(--text);
+  font-size: 15px;
+}
+.player-row input:focus { outline: none; border-color: var(--gold); }
+.player-row .remove {
+  background: transparent; border: none; color: var(--muted);
+  font-size: 22px; cursor: pointer; padding: 0 6px; line-height: 1;
+}
+.player-row .remove:hover { color: var(--red); }
+.setup-actions { display: flex; gap: 10px; justify-content: space-between; flex-wrap: wrap; }
+
+/* ---------- Game toolbar ---------- */
+.game-toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; margin-bottom: 16px;
+}
+.round-info { display: flex; align-items: baseline; gap: 8px; }
+.round-label { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+.round-number { font-size: 26px; font-weight: 800; color: var(--gold); }
+.toolbar-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.toolbar-actions .btn { padding: 9px 13px; font-size: 14px; }
+
+/* ---------- Standings ---------- */
+.standings-wrap, .history-wrap { overflow-x: auto; border-radius: var(--radius); }
+.standings {
+  width: 100%; border-collapse: collapse;
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: var(--radius); overflow: hidden;
+}
+.standings th, .standings td {
+  padding: 12px 12px; text-align: left; border-bottom: 1px solid var(--line);
+}
+.standings thead th {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;
+  color: var(--muted); background: var(--bg-2);
+}
+.standings tbody tr:last-child td { border-bottom: none; }
+.standings .rank { color: var(--gold); font-weight: 800; width: 32px; }
+.standings .pname { font-weight: 600; }
+.standings .phase-cell { white-space: nowrap; }
+.standings .phase-pill {
+  display: inline-block; padding: 3px 10px; border-radius: 999px;
+  background: var(--card-2); color: var(--gold-2);
+  font-size: 13px; font-weight: 700; border: 1px solid var(--line);
+}
+.standings .total { font-weight: 800; font-size: 17px; text-align: right; }
+.standings tr.is-winner { background: rgba(200, 162, 75, 0.12); }
+.standings tr.is-winner .pname::after { content: " 👑"; }
+.standings .phase-done { color: var(--green); }
+
+/* ---------- History ---------- */
+.history {
+  width: 100%; border-collapse: collapse; font-size: 14px;
+  background: var(--card); border: 1px solid var(--line);
+}
+.history th, .history td {
+  padding: 9px 10px; text-align: center; border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.history thead th {
+  background: var(--bg-2); color: var(--muted);
+  font-size: 12px; position: sticky; top: 0;
+}
+.history td.rnd { color: var(--gold); font-weight: 700; }
+.history .cell-pts { font-weight: 700; }
+.history .cell-phase { color: var(--muted); font-size: 11px; }
+.history .ok { color: var(--green); }
+.history tbody tr:last-child td { border-bottom: none; }
+.history .empty { color: var(--muted); padding: 20px; }
+
+/* ---------- Winner banner ---------- */
+.winner-banner {
+  background: linear-gradient(180deg, rgba(200,162,75,0.22), rgba(200,162,75,0.08));
+  border: 1px solid var(--gold);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  margin-bottom: 16px;
+  text-align: center;
+  font-size: 17px;
+}
+.winner-banner strong { color: var(--gold-2); font-size: 20px; }
+
+/* ---------- Dialog ---------- */
+.dialog {
+  width: min(560px, 94vw);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--text);
+  padding: 0;
+  box-shadow: var(--shadow);
+}
+.dialog::backdrop { background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(2px); }
+.dialog-form { padding: 22px; }
+.dialog-form h2 { margin: 0 0 6px; }
+.round-rows { display: flex; flex-direction: column; gap: 10px; margin: 16px 0; }
+.round-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.round-row .rr-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+.round-row .rr-phase { font-size: 12px; color: var(--muted); font-weight: 400; }
+.round-row .rr-points {
+  width: 84px; text-align: center;
+  background: var(--card); border: 1px solid var(--line); border-radius: 8px;
+  padding: 9px; color: var(--text); font-size: 15px;
+}
+.round-row .rr-points:focus { outline: none; border-color: var(--gold); }
+.rr-check { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); cursor: pointer; user-select: none; }
+.rr-check input { width: 18px; height: 18px; accent-color: var(--green); }
+.points-help {
+  font-size: 12.5px; color: var(--muted); line-height: 1.5;
+  background: var(--bg-2); border: 1px solid var(--line);
+  border-radius: 10px; padding: 10px 12px; margin-bottom: 16px;
+}
+.dialog-actions { display: flex; justify-content: flex-end; gap: 10px; }
+
+/* ---------- Rules ---------- */
+.rules { display: flex; flex-direction: column; gap: 16px; }
+.rules .card h2 { margin: 0 0 4px; color: var(--gold-2); font-size: 19px; }
+.rules .card h3 { margin: 14px 0 6px; font-size: 15px; }
+.rules p { line-height: 1.65; margin: 8px 0; color: #dcdce2; }
+.rules ul { margin: 8px 0; padding-left: 20px; line-height: 1.6; color: #dcdce2; }
+.rules li { margin: 5px 0; }
+.rules .tag {
+  display: inline-block; font-size: 12px; color: var(--gold);
+  text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;
+}
+
+.phase-list { display: grid; gap: 10px; }
+.phase-item {
+  display: grid; grid-template-columns: 44px 1fr; gap: 12px; align-items: center;
+  background: var(--bg-2); border: 1px solid var(--line);
+  border-radius: 10px; padding: 10px 12px;
+}
+.phase-item .pnum {
+  width: 40px; height: 40px; display: grid; place-items: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, var(--gold-2), var(--gold) 60%, #8a6b25);
+  color: #1a1408; font-weight: 800; font-size: 16px;
+}
+.phase-item .pdesc { font-weight: 600; }
+.phase-item .psub { color: var(--muted); font-size: 13px; font-weight: 400; }
+
+.score-table { width: 100%; border-collapse: collapse; margin: 8px 0; }
+.score-table td { padding: 7px 10px; border-bottom: 1px solid var(--line); }
+.score-table td:last-child { text-align: right; font-weight: 700; color: var(--gold-2); white-space: nowrap; }
+.score-table tr:last-child td { border-bottom: none; }
+
+/* ---------- Footer ---------- */
+.app-footer {
+  text-align: center; color: var(--muted); font-size: 12px;
+  padding: 20px 16px 30px; line-height: 1.5;
+}
+
+@media (max-width: 480px) {
+  .brand-mark { font-size: 26px; }
+  .toolbar-actions { width: 100%; }
+  .toolbar-actions .btn { flex: 1; }
+  .standings th, .standings td { padding: 10px 8px; }
+}
+
+  </style>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230d0d0f'/%3E%3Ctext x='50' y='68' font-size='52' font-family='Arial' font-weight='bold' fill='%23c8a24b' text-anchor='middle'%3E10%3C/text%3E%3C/svg%3E" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <span class="brand-mark">Phase</span>
+      <span class="brand-badge">10</span>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button class="tab is-active" data-view="game" role="tab">Spiel &amp; Punkte</button>
+      <button class="tab" data-view="rules" role="tab">Spielregeln</button>
+    </nav>
+  </header>
+
+  <main class="app-main">
+    <!-- ============ SPIEL / PUNKTE-ERFASSUNG ============ -->
+    <section id="view-game" class="view is-active">
+
+      <!-- Setup -->
+      <div id="setup" class="card setup">
+        <h2>Neues Spiel</h2>
+        <p class="muted">Trage 2 bis 6 Spieler ein. Jeder startet bei Phase&nbsp;1.</p>
+        <div id="player-inputs" class="player-inputs"></div>
+        <div class="setup-actions">
+          <button id="add-player" class="btn btn-ghost" type="button">+ Spieler</button>
+          <button id="start-game" class="btn btn-primary" type="button">Spiel starten</button>
+        </div>
+      </div>
+
+      <!-- Laufendes Spiel -->
+      <div id="game" class="game hidden">
+        <div id="winner-banner" class="winner-banner hidden"></div>
+
+        <div class="game-toolbar">
+          <div class="round-info">
+            <span class="round-label">Durchgang</span>
+            <span id="round-count" class="round-number">0</span>
+          </div>
+          <div class="toolbar-actions">
+            <button id="new-round" class="btn btn-primary" type="button">+ Runde erfassen</button>
+            <button id="undo-round" class="btn btn-ghost" type="button">Letzte Runde löschen</button>
+            <button id="reset-game" class="btn btn-danger-ghost" type="button">Neues Spiel</button>
+          </div>
+        </div>
+
+        <div class="standings-wrap">
+          <table id="standings" class="standings"></table>
+        </div>
+
+        <h3 class="section-title">Rundenverlauf</h3>
+        <div class="history-wrap">
+          <table id="history" class="history"></table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SPIELREGELN ============ -->
+    <section id="view-rules" class="view">
+      <div id="rules-content" class="rules"></div>
+    </section>
+  </main>
+
+  <!-- ============ RUNDEN-DIALOG ============ -->
+  <dialog id="round-dialog" class="dialog">
+    <form method="dialog" class="dialog-form">
+      <h2 id="round-dialog-title">Runde erfassen</h2>
+      <p class="muted">Trage für jeden Spieler die Restpunkte auf der Hand ein und markiere, wer seine Phase geschafft hat.</p>
+      <div id="round-rows" class="round-rows"></div>
+      <div class="points-help">
+        <strong>Punktewerte:</strong> Karten 1–9 = 5&nbsp;P · Karten 10–12 = 10&nbsp;P · Aussetzen = 15&nbsp;P · Joker = 20&nbsp;P
+      </div>
+      <div class="dialog-actions">
+        <button value="cancel" class="btn btn-ghost" type="submit">Abbrechen</button>
+        <button id="save-round" value="save" class="btn btn-primary" type="submit">Runde speichern</button>
+      </div>
+    </form>
+  </dialog>
+
+  <footer class="app-footer">
+    <span>Phase 10 von Ravensburger · Diese App dient der Punkte-Erfassung &amp; Regelübersicht.</span>
+  </footer>
+
+  <script>
+/* Phase 10 – Regeln & Phasenliste (Original-Anleitung von Ravensburger) */
+
+const PHASES = [
+  { n: 1,  desc: "2 Drillinge",                sub: "Zwei Sätze mit je 3 gleichen Karten" },
+  { n: 2,  desc: "1 Drilling + 1 Viererfolge", sub: "3 gleiche Karten + Folge aus 4 Karten" },
+  { n: 3,  desc: "1 Vierling + 1 Viererfolge", sub: "4 gleiche Karten + Folge aus 4 Karten" },
+  { n: 4,  desc: "1 Siebenerfolge",            sub: "Folge aus 7 aufeinanderfolgenden Karten" },
+  { n: 5,  desc: "1 Achterfolge",              sub: "Folge aus 8 aufeinanderfolgenden Karten" },
+  { n: 6,  desc: "1 Neunerfolge",              sub: "Folge aus 9 aufeinanderfolgenden Karten" },
+  { n: 7,  desc: "2 Vierlinge",                sub: "Zwei Sätze mit je 4 gleichen Karten" },
+  { n: 8,  desc: "7 Karten einer Farbe",       sub: "Sieben Karten in derselben Farbe" },
+  { n: 9,  desc: "1 Fünfling + 1 Zwilling",    sub: "5 gleiche Karten + 2 gleiche Karten" },
+  { n: 10, desc: "1 Fünfling + 1 Drilling",    sub: "5 gleiche Karten + 3 gleiche Karten" },
+];
+
+const SCORE_VALUES = [
+  ["Karten mit Wert 1 – 9", "je 5 Punkte"],
+  ["Karten mit Wert 10 – 12", "je 10 Punkte"],
+  ["„Aussetzen“-Karten", "je 15 Punkte"],
+  ["Joker", "je 20 Punkte"],
+];
+
+/* HTML-Bausteine für die Regelansicht */
+function buildRulesHTML() {
+  const phaseItems = PHASES.map(p => `
+    <div class="phase-item">
+      <span class="pnum">${p.n}</span>
+      <span>
+        <span class="pdesc">${p.desc}</span><br>
+        <span class="psub">${p.sub}</span>
+      </span>
+    </div>`).join("");
+
+  const scoreRows = SCORE_VALUES.map(([k, v]) =>
+    `<tr><td>${k}</td><td>${v}</td></tr>`).join("");
+
+  return `
+    <div class="card">
+      <span class="tag">Spielziel</span>
+      <h2>In 10 Phasen zum Sieg!</h2>
+      <p>Alle Phasen – das sind Kombinationen bestimmter Karten – sind verschieden und mit jedem
+      Durchgang schwieriger. Konnte ein Spieler eine Phase erfolgreich auslegen, darf er sich im
+      nächsten Durchgang an der nächsten Phase versuchen. Schafft man es nicht, muss man sich an
+      derselben Phase erneut versuchen, bis es endlich gelingt.</p>
+      <p><strong>Wer zuerst alle 10 Phasen geschafft hat, ist Gewinner.</strong></p>
+    </div>
+
+    <div class="card">
+      <span class="tag">Spielmaterial &amp; Vorbereitung</span>
+      <h2>Material</h2>
+      <p>108 Spielkarten (je zweimal die Werte 1–12 in 4 Farben), 4 Karten „Aussetzen“ und
+      8 Joker sowie 6 Übersichtskarten. Zusätzlich braucht man dieser App ☺ – früher Blatt &amp; Stift.</p>
+      <h3>Vorbereitung</h3>
+      <p>Jeder Spieler erhält <strong>10 Karten</strong> verdeckt vom gut gemischten Stapel.
+      Die restlichen Karten bilden den verdeckten Aufnahmestapel; die oberste Karte wird offen
+      daneben als Beginn des Ablagestapels gelegt.</p>
+    </div>
+
+    <div class="card">
+      <span class="tag">Die 10 Phasen</span>
+      <h2>Das musst du auslegen</h2>
+      <p>Die Phasen müssen in der vorgegebenen Reihenfolge abgehandelt werden – zuerst Phase 1,
+      dann Phase 2 usw.</p>
+      <div class="phase-list">${phaseItems}</div>
+    </div>
+
+    <div class="card">
+      <span class="tag">Spielverlauf</span>
+      <h2>Ein Zug</h2>
+      <p>Es wird reihum im Uhrzeigersinn gespielt; der Spieler links vom Geber beginnt. Wer an der
+      Reihe ist:</p>
+      <ul>
+        <li><strong>muss</strong> eine Karte aufnehmen – entweder vom verdeckten Aufnahmestapel
+        oder die oberste offenliegende vom Ablagestapel;</li>
+        <li><strong>kann</strong> anschließend die aktuelle Phase auslegen;</li>
+        <li><strong>muss</strong> schließlich eine Karte offen auf den Ablagestapel werfen.</li>
+      </ul>
+      <p>Man darf nie nur einen Teil einer Phase auslegen, sondern immer nur die vollständige
+      Kombination. Zusätzliche passende Karten dürfen aber gespielt werden, wenn sie zur Phase
+      passen. Hat ein Spieler seine Phase ausgelegt, versucht er, seine restlichen Karten durch
+      Anlegen (an eigene oder fremde Auslagen) loszuwerden.</p>
+    </div>
+
+    <div class="card">
+      <span class="tag">Sonderkarten</span>
+      <h2>Joker &amp; Aussetzen</h2>
+      <p><strong>Joker („Stern“)</strong> ersetzen jede beliebige Karte, um eine Phase zu
+      vervollständigen oder Karten anzulegen. Es dürfen beliebig viele Joker in einer Phase
+      eingesetzt werden.</p>
+      <p>Eine <strong>„Aussetzen“-Karte</strong> wird wie eine letzte Karte eines Zuges gespielt,
+      jedoch nicht auf den Ablagestapel geworfen, sondern vor einen beliebigen Mitspieler gelegt.
+      Dieser muss eine Runde aussetzen.</p>
+    </div>
+
+    <div class="card">
+      <span class="tag">Wertung</span>
+      <h2>Punkte zählen</h2>
+      <p>Ein Durchgang ist beendet, sobald ein Spieler seine letzte Karte ablegen konnte. Alle
+      anderen Spieler zählen die Werte ihrer noch auf der Hand verbliebenen Karten zusammen –
+      <strong>Minuspunkte, also möglichst wenig!</strong></p>
+      <table class="score-table"><tbody>${scoreRows}</tbody></table>
+      <p>Zudem wird notiert, welche Phase jeder Spieler erreicht bzw. geschafft hat. <strong>Sieger
+      ist, wer am Ende eines Durchgangs seine 10. Phase geschafft hat.</strong> Gelingt dies
+      mehreren im selben Durchgang, gewinnt davon der Spieler mit den wenigsten Punkten.</p>
+    </div>
+
+    <div class="card">
+      <span class="tag">Spezielle Regeln</span>
+      <h2>Gut zu wissen</h2>
+      <ul>
+        <li>Zwischen den Werten 12 und 1 gibt es keine direkte Verbindung (kein „Rundherum“).</li>
+        <li>6 bzw. 8 gleiche Karten können als zwei Drillinge bzw. Vierlinge eingesetzt werden.</li>
+        <li>Sind z.&nbsp;B. zwei Drillinge gefordert, passt ein dritter Drilling nicht zur Phase.</li>
+        <li>Ein Joker nimmt (in der 8. Phase) jede beliebige Farbe an.</li>
+        <li>Bereits ausliegende Joker dürfen nicht ersetzt und wieder aufgenommen werden.</li>
+        <li>Ein Joker kann nicht als „Aussetzen“-Karte eingesetzt werden.</li>
+        <li>Ein Spieler darf höchstens eine „Aussetzen“-Karte vor sich liegen haben.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <span class="tag">Varianten</span>
+      <h2>Andere Spielweisen</h2>
+      <ul>
+        <li><strong>Genau 10 Durchgänge:</strong> Nach jedem Durchgang rücken alle eine Phase
+        weiter, egal ob geschafft. Wer nach 10 Durchgängen die wenigsten Punkte hat, gewinnt.</li>
+        <li><strong>Weniger Phasen:</strong> Vor Spielbeginn nur eine bestimmte Anzahl Phasen
+        (z.&nbsp;B. die ersten 5) oder nur gerade/ungerade Phasen vereinbaren.</li>
+        <li><strong>Klopfen:</strong> Eine abgeworfene Karte darf von einem anderen Spieler schnell
+        „abgeklopft“ und genommen werden, muss dafür aber selbst eine Karte abwerfen.</li>
+      </ul>
+    </div>
+  `;
+}
+
+  </script>
+  <script>
+/* Phase 10 – Punkte-Erfassung
+ * Datenmodell wird in localStorage gespeichert, läuft komplett offline.
+ */
+(function () {
+  "use strict";
+
+  const STORAGE_KEY = "phase10-state-v1";
+  const MAX_PHASE = 10;
+  const MIN_PLAYERS = 2;
+  const MAX_PLAYERS = 6;
+
+  /** @typedef {{name:string, points:number[], done:boolean[]}} Player
+   *  points[r] = Restpunkte in Runde r, done[r] = Phase in Runde r geschafft */
+
+  let state = load() || null;
+
+  // ---------- DOM ----------
+  const $ = (sel) => document.querySelector(sel);
+  const el = {
+    tabs: document.querySelectorAll(".tab"),
+    views: { game: $("#view-game"), rules: $("#view-rules") },
+    setup: $("#setup"),
+    playerInputs: $("#player-inputs"),
+    addPlayer: $("#add-player"),
+    startGame: $("#start-game"),
+    game: $("#game"),
+    roundCount: $("#round-count"),
+    standings: $("#standings"),
+    history: $("#history"),
+    winnerBanner: $("#winner-banner"),
+    newRound: $("#new-round"),
+    undoRound: $("#undo-round"),
+    resetGame: $("#reset-game"),
+    dialog: $("#round-dialog"),
+    dialogTitle: $("#round-dialog-title"),
+    roundRows: $("#round-rows"),
+    rulesContent: $("#rules-content"),
+  };
+
+  // ---------- Persistenz ----------
+  function save() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+  }
+  function load() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch (e) { return null; }
+  }
+
+  // ---------- Ableitungen ----------
+  function rounds() {
+    return state && state.players.length ? state.players[0].points.length : 0;
+  }
+  // Aktuelle Phase eines Spielers = 1 + Anzahl geschaffter Phasen (max 10)
+  function currentPhase(p) {
+    const completed = completedCount(p);
+    return Math.min(completed + 1, MAX_PHASE);
+  }
+  function completedCount(p) {
+    return p.done.filter(Boolean).length;
+  }
+  function totalPoints(p) {
+    return p.points.reduce((a, b) => a + (b || 0), 0);
+  }
+  function isFinished(p) {
+    return completedCount(p) >= MAX_PHASE;
+  }
+  // Gewinner: hat Phase 10 geschafft; bei Gleichstand wenigste Punkte
+  function findWinner() {
+    const finishers = state.players.filter(isFinished);
+    if (!finishers.length) return null;
+    return finishers.slice().sort((a, b) => totalPoints(a) - totalPoints(b))[0];
+  }
+
+  // ---------- Tab-Navigation ----------
+  el.tabs.forEach((tab) => {
+    tab.addEventListener("click", () => {
+      el.tabs.forEach((t) => t.classList.remove("is-active"));
+      tab.classList.add("is-active");
+      Object.values(el.views).forEach((v) => v.classList.remove("is-active"));
+      el.views[tab.dataset.view].classList.add("is-active");
+    });
+  });
+
+  // ---------- Setup ----------
+  function addPlayerInput(name = "") {
+    const rows = el.playerInputs.children.length;
+    if (rows >= MAX_PLAYERS) return;
+    const idx = rows + 1;
+    const row = document.createElement("div");
+    row.className = "player-row";
+    row.innerHTML = `
+      <span class="seat">${idx}</span>
+      <input type="text" maxlength="20" placeholder="Spieler ${idx}" value="${escapeAttr(name)}" />
+      <button class="remove" type="button" title="Entfernen" aria-label="Entfernen">×</button>`;
+    row.querySelector(".remove").addEventListener("click", () => {
+      row.remove();
+      renumberSeats();
+    });
+    row.querySelector("input").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); startGame(); }
+    });
+    el.playerInputs.appendChild(row);
+  }
+  function renumberSeats() {
+    [...el.playerInputs.children].forEach((row, i) => {
+      row.querySelector(".seat").textContent = i + 1;
+      const inp = row.querySelector("input");
+      if (!inp.value) inp.placeholder = `Spieler ${i + 1}`;
+    });
+  }
+  el.addPlayer.addEventListener("click", () => addPlayerInput());
+
+  function startGame() {
+    const names = [...el.playerInputs.querySelectorAll("input")]
+      .map((i, idx) => i.value.trim() || `Spieler ${idx + 1}`);
+    if (names.length < MIN_PLAYERS) {
+      flash(el.startGame, "Mind. 2 Spieler");
+      return;
+    }
+    state = { players: names.map((name) => ({ name, points: [], done: [] })) };
+    save();
+    render();
+  }
+  el.startGame.addEventListener("click", startGame);
+
+  // ---------- Runden-Dialog ----------
+  el.newRound.addEventListener("click", openRoundDialog);
+
+  function openRoundDialog() {
+    if (findWinner()) {
+      if (!confirm("Das Spiel ist beendet. Trotzdem eine weitere Runde erfassen?")) return;
+    }
+    el.dialogTitle.textContent = `Durchgang ${rounds() + 1} erfassen`;
+    el.roundRows.innerHTML = state.players.map((p, i) => {
+      const ph = currentPhase(p);
+      const finished = isFinished(p);
+      return `
+        <div class="round-row" data-i="${i}">
+          <div class="rr-name">${escapeHtml(p.name)}
+            <div class="rr-phase">${finished ? "Alle Phasen geschafft ✓" : "Aktuell: Phase " + ph}</div>
+          </div>
+          <input class="rr-points" type="number" inputmode="numeric" min="0" step="5"
+                 value="0" aria-label="Restpunkte ${escapeAttr(p.name)}" />
+          <label class="rr-check">
+            <input type="checkbox" ${finished ? "disabled" : ""} />
+            Phase ${finished ? "✓" : ph + " ok"}
+          </label>
+        </div>`;
+    }).join("");
+
+    // Punkte-Feld bei Fokus selektieren
+    el.roundRows.querySelectorAll(".rr-points").forEach((inp) => {
+      inp.addEventListener("focus", () => inp.select());
+    });
+    el.dialog.showModal();
+    el.roundRows.querySelector(".rr-points").focus();
+  }
+
+  // Dialog-Schließen verarbeiten
+  el.dialog.addEventListener("close", () => {
+    if (el.dialog.returnValue !== "save") return;
+    const rows = el.roundRows.querySelectorAll(".round-row");
+    rows.forEach((row) => {
+      const i = +row.dataset.i;
+      const p = state.players[i];
+      const pts = Math.max(0, Math.round(+row.querySelector(".rr-points").value || 0));
+      const chk = row.querySelector('input[type="checkbox"]');
+      const done = chk.checked && !chk.disabled && !isFinished(p);
+      p.points.push(pts);
+      p.done.push(done);
+    });
+    save();
+    render();
+  });
+
+  // ---------- Letzte Runde löschen ----------
+  el.undoRound.addEventListener("click", () => {
+    if (rounds() === 0) return;
+    if (!confirm("Die zuletzt erfasste Runde wirklich löschen?")) return;
+    state.players.forEach((p) => { p.points.pop(); p.done.pop(); });
+    save();
+    render();
+  });
+
+  // ---------- Neues Spiel ----------
+  el.resetGame.addEventListener("click", () => {
+    if (!confirm("Aktuelles Spiel verwerfen und ein neues starten?")) return;
+    state = null;
+    localStorage.removeItem(STORAGE_KEY);
+    render();
+  });
+
+  // ---------- Rendering ----------
+  function render() {
+    // Setup vs. Spiel
+    if (!state) {
+      el.setup.classList.remove("hidden");
+      el.game.classList.add("hidden");
+      el.playerInputs.innerHTML = "";
+      addPlayerInput();
+      addPlayerInput();
+    } else {
+      el.setup.classList.add("hidden");
+      el.game.classList.remove("hidden");
+      renderStandings();
+      renderHistory();
+      renderWinner();
+      el.roundCount.textContent = rounds();
+      el.undoRound.disabled = rounds() === 0;
+      el.undoRound.style.opacity = rounds() === 0 ? 0.5 : 1;
+    }
+  }
+
+  function renderStandings() {
+    const winner = findWinner();
+    // Sortierung: zuerst nach geschafften Phasen (absteigend), dann nach Punkten (aufsteigend)
+    const ranked = state.players
+      .map((p) => ({ p, total: totalPoints(p), comp: completedCount(p) }))
+      .sort((a, b) => b.comp - a.comp || a.total - b.total);
+
+    const head = `
+      <thead><tr>
+        <th class="rank">#</th><th>Spieler</th><th>Phase</th><th style="text-align:right">Punkte</th>
+      </tr></thead>`;
+    const body = ranked.map((r, i) => {
+      const p = r.p;
+      const finished = isFinished(p);
+      const phaseLabel = finished
+        ? `<span class="phase-pill phase-done">Fertig ✓</span>`
+        : `<span class="phase-pill">Phase ${currentPhase(p)}</span>`;
+      return `
+        <tr class="${winner === p ? "is-winner" : ""}">
+          <td class="rank">${i + 1}</td>
+          <td class="pname">${escapeHtml(p.name)}</td>
+          <td class="phase-cell">${phaseLabel} <small style="color:var(--muted)">(${r.comp}/10)</small></td>
+          <td class="total">${r.total}</td>
+        </tr>`;
+    }).join("");
+    el.standings.innerHTML = head + "<tbody>" + body + "</tbody>";
+  }
+
+  function renderHistory() {
+    const n = rounds();
+    if (n === 0) {
+      el.history.innerHTML =
+        `<tbody><tr><td class="empty">Noch keine Runde erfasst. Tippe auf „+ Runde erfassen“.</td></tr></tbody>`;
+      return;
+    }
+    const head = `<thead><tr><th>Runde</th>${
+      state.players.map((p) => `<th>${escapeHtml(p.name)}</th>`).join("")
+    }</tr></thead>`;
+
+    let body = "";
+    for (let r = 0; r < n; r++) {
+      body += `<tr><td class="rnd">${r + 1}</td>${
+        state.players.map((p) => {
+          const pts = p.points[r] ?? 0;
+          const done = p.done[r];
+          return `<td>
+            <span class="cell-pts">${pts}</span>
+            <div class="cell-phase">${done ? '<span class="ok">Phase ✓</span>' : "Phase –"}</div>
+          </td>`;
+        }).join("")
+      }</tr>`;
+    }
+    // Summenzeile
+    body += `<tr style="background:var(--bg-2)"><td class="rnd">Σ</td>${
+      state.players.map((p) =>
+        `<td><span class="cell-pts" style="color:var(--gold-2)">${totalPoints(p)}</span>
+         <div class="cell-phase">${completedCount(p)}/10 Phasen</div></td>`).join("")
+    }</tr>`;
+
+    el.history.innerHTML = head + "<tbody>" + body + "</tbody>";
+  }
+
+  function renderWinner() {
+    const winner = findWinner();
+    if (!winner) { el.winnerBanner.classList.add("hidden"); return; }
+    el.winnerBanner.classList.remove("hidden");
+    el.winnerBanner.innerHTML =
+      `🎉 <strong>${escapeHtml(winner.name)}</strong> hat alle 10 Phasen geschafft und gewinnt mit
+       ${totalPoints(winner)} Punkten!`;
+  }
+
+  // ---------- Helfer ----------
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+  function escapeAttr(s) { return escapeHtml(s); }
+  function flash(node, msg) {
+    const old = node.textContent;
+    node.textContent = msg;
+    node.disabled = true;
+    setTimeout(() => { node.textContent = old; node.disabled = false; }, 1200);
+  }
+
+  // ---------- Init ----------
+  el.rulesContent.innerHTML = buildRulesHTML();
+  render();
+})();
+
+  </script>
+</body>
+</html>
