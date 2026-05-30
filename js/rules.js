@@ -20,6 +20,38 @@ const SCORE_VALUES = [
   ["Joker", "je 20 Punkte"],
 ];
 
+/* Spielmodi – seq = Reihenfolge der zu spielenden Phasen,
+ * auto = jeder rückt jede Runde automatisch weiter,
+ * limit = feste Anzahl Durchgänge (sonst null). */
+const MODES = {
+  standard: {
+    label: "Standard – alle 10 Phasen",
+    seq: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], auto: false, limit: null,
+    hint: "Alle 10 Phasen der Reihe nach. Wer zuerst alle schafft, gewinnt – bei Gleichstand entscheiden die wenigsten Punkte.",
+  },
+  short5: {
+    label: "Kurzspiel – erste 5 Phasen",
+    seq: [1, 2, 3, 4, 5], auto: false, limit: null,
+    hint: "Nur die ersten 5 Phasen werden gespielt. Wer sie zuerst schafft, gewinnt.",
+  },
+  even: {
+    label: "Nur gerade Phasen (2·4·6·8·10)",
+    seq: [2, 4, 6, 8, 10], auto: false, limit: null,
+    hint: "Es werden nur die geraden Phasen 2, 4, 6, 8 und 10 gespielt.",
+  },
+  odd: {
+    label: "Nur ungerade Phasen (1·3·5·7·9)",
+    seq: [1, 3, 5, 7, 9], auto: false, limit: null,
+    hint: "Es werden nur die ungeraden Phasen 1, 3, 5, 7 und 9 gespielt.",
+  },
+  tenrounds: {
+    label: "10 Durchgänge – Punktespiel",
+    seq: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], auto: true, limit: 10,
+    hint: "Genau 10 Durchgänge. Alle rücken jede Runde eine Phase weiter – egal ob geschafft. Wer am Ende die wenigsten Punkte hat, gewinnt.",
+  },
+};
+const DEFAULT_MODE = "standard";
+
 /* HTML-Bausteine für die Regelansicht */
 function buildRulesHTML() {
   const phaseItems = PHASES.map(p => `
@@ -33,6 +65,9 @@ function buildRulesHTML() {
 
   const scoreRows = SCORE_VALUES.map(([k, v]) =>
     `<tr><td>${k}</td><td>${v}</td></tr>`).join("");
+
+  const modeItems = Object.values(MODES).map(m => `
+    <li><strong>${m.label}:</strong> ${m.hint}</li>`).join("");
 
   return `
     <div class="card">
@@ -119,8 +154,16 @@ function buildRulesHTML() {
     </div>
 
     <div class="card">
+      <span class="tag">Spielmodi</span>
+      <h2>Modi in dieser App</h2>
+      <p>Beim Start eines neuen Spiels kannst du einen Modus wählen. Die Punkte-Erfassung
+      passt Phasenfolge, Rundenzahl und Siegbedingung automatisch an:</p>
+      <ul>${modeItems}</ul>
+    </div>
+
+    <div class="card">
       <span class="tag">Varianten</span>
-      <h2>Andere Spielweisen</h2>
+      <h2>Weitere Spielweisen</h2>
       <ul>
         <li><strong>Genau 10 Durchgänge:</strong> Nach jedem Durchgang rücken alle eine Phase
         weiter, egal ob geschafft. Wer nach 10 Durchgängen die wenigsten Punkte hat, gewinnt.</li>

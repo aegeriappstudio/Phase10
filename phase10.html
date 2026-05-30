@@ -146,6 +146,30 @@ html, body {
 
 /* ---------- Setup ---------- */
 .setup h2 { margin: 0 0 6px; }
+.field-label {
+  display: block; margin: 16px 0 6px;
+  font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: var(--gold);
+}
+.mode-select {
+  width: 100%;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 11px 12px;
+  color: var(--text);
+  font-size: 15px;
+  cursor: pointer;
+}
+.mode-select:focus { outline: none; border-color: var(--gold); }
+.mode-hint { margin: 8px 2px 2px; min-height: 1.4em; }
+.mode-badge {
+  display: inline-block;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.3px;
+  color: var(--gold-2);
+  background: var(--card-2); border: 1px solid var(--line);
+  border-radius: 999px; padding: 2px 9px; margin-left: 4px;
+  vertical-align: middle;
+}
 .player-inputs { display: flex; flex-direction: column; gap: 10px; margin: 16px 0; }
 .player-row { display: flex; align-items: center; gap: 10px; }
 .player-row .seat {
@@ -267,6 +291,7 @@ html, body {
   border-radius: 10px;
   padding: 10px 12px;
 }
+.round-row.no-check { grid-template-columns: 1fr auto; }
 .round-row .rr-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
 .round-row .rr-phase { font-size: 12px; color: var(--muted); font-weight: 400; }
 .round-row .rr-points {
@@ -351,7 +376,12 @@ html, body {
       <!-- Setup -->
       <div id="setup" class="card setup">
         <h2>Neues Spiel</h2>
-        <p class="muted">Trage 2 bis 6 Spieler ein. Jeder startet bei Phase&nbsp;1.</p>
+        <p class="muted">Wähle einen Spielmodus und trage 2 bis 6 Spieler ein.</p>
+
+        <label class="field-label" for="mode-select">Spielmodus</label>
+        <select id="mode-select" class="mode-select"></select>
+        <p id="mode-hint" class="muted mode-hint"></p>
+
         <div id="player-inputs" class="player-inputs"></div>
         <div class="setup-actions">
           <button id="add-player" class="btn btn-ghost" type="button">+ Spieler</button>
@@ -367,6 +397,7 @@ html, body {
           <div class="round-info">
             <span class="round-label">Durchgang</span>
             <span id="round-count" class="round-number">0</span>
+            <span id="mode-badge" class="mode-badge"></span>
           </div>
           <div class="toolbar-actions">
             <button id="new-round" class="btn btn-primary" type="button">+ Runde erfassen</button>
@@ -435,6 +466,38 @@ const SCORE_VALUES = [
   ["Joker", "je 20 Punkte"],
 ];
 
+/* Spielmodi – seq = Reihenfolge der zu spielenden Phasen,
+ * auto = jeder rückt jede Runde automatisch weiter,
+ * limit = feste Anzahl Durchgänge (sonst null). */
+const MODES = {
+  standard: {
+    label: "Standard – alle 10 Phasen",
+    seq: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], auto: false, limit: null,
+    hint: "Alle 10 Phasen der Reihe nach. Wer zuerst alle schafft, gewinnt – bei Gleichstand entscheiden die wenigsten Punkte.",
+  },
+  short5: {
+    label: "Kurzspiel – erste 5 Phasen",
+    seq: [1, 2, 3, 4, 5], auto: false, limit: null,
+    hint: "Nur die ersten 5 Phasen werden gespielt. Wer sie zuerst schafft, gewinnt.",
+  },
+  even: {
+    label: "Nur gerade Phasen (2·4·6·8·10)",
+    seq: [2, 4, 6, 8, 10], auto: false, limit: null,
+    hint: "Es werden nur die geraden Phasen 2, 4, 6, 8 und 10 gespielt.",
+  },
+  odd: {
+    label: "Nur ungerade Phasen (1·3·5·7·9)",
+    seq: [1, 3, 5, 7, 9], auto: false, limit: null,
+    hint: "Es werden nur die ungeraden Phasen 1, 3, 5, 7 und 9 gespielt.",
+  },
+  tenrounds: {
+    label: "10 Durchgänge – Punktespiel",
+    seq: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], auto: true, limit: 10,
+    hint: "Genau 10 Durchgänge. Alle rücken jede Runde eine Phase weiter – egal ob geschafft. Wer am Ende die wenigsten Punkte hat, gewinnt.",
+  },
+};
+const DEFAULT_MODE = "standard";
+
 /* HTML-Bausteine für die Regelansicht */
 function buildRulesHTML() {
   const phaseItems = PHASES.map(p => `
@@ -448,6 +511,9 @@ function buildRulesHTML() {
 
   const scoreRows = SCORE_VALUES.map(([k, v]) =>
     `<tr><td>${k}</td><td>${v}</td></tr>`).join("");
+
+  const modeItems = Object.values(MODES).map(m => `
+    <li><strong>${m.label}:</strong> ${m.hint}</li>`).join("");
 
   return `
     <div class="card">
@@ -534,8 +600,16 @@ function buildRulesHTML() {
     </div>
 
     <div class="card">
+      <span class="tag">Spielmodi</span>
+      <h2>Modi in dieser App</h2>
+      <p>Beim Start eines neuen Spiels kannst du einen Modus wählen. Die Punkte-Erfassung
+      passt Phasenfolge, Rundenzahl und Siegbedingung automatisch an:</p>
+      <ul>${modeItems}</ul>
+    </div>
+
+    <div class="card">
       <span class="tag">Varianten</span>
-      <h2>Andere Spielweisen</h2>
+      <h2>Weitere Spielweisen</h2>
       <ul>
         <li><strong>Genau 10 Durchgänge:</strong> Nach jedem Durchgang rücken alle eine Phase
         weiter, egal ob geschafft. Wer nach 10 Durchgängen die wenigsten Punkte hat, gewinnt.</li>
@@ -557,14 +631,12 @@ function buildRulesHTML() {
   "use strict";
 
   const STORAGE_KEY = "phase10-state-v1";
-  const MAX_PHASE = 10;
   const MIN_PLAYERS = 2;
   const MAX_PLAYERS = 6;
 
-  /** @typedef {{name:string, points:number[], done:boolean[]}} Player
-   *  points[r] = Restpunkte in Runde r, done[r] = Phase in Runde r geschafft */
-
+  /** state = { mode:string, players:[{name, points:number[], done:boolean[]}] } */
   let state = load() || null;
+  if (state && !state.mode) state.mode = DEFAULT_MODE; // Rückwärtskompatibilität
 
   // ---------- DOM ----------
   const $ = (sel) => document.querySelector(sel);
@@ -572,11 +644,14 @@ function buildRulesHTML() {
     tabs: document.querySelectorAll(".tab"),
     views: { game: $("#view-game"), rules: $("#view-rules") },
     setup: $("#setup"),
+    modeSelect: $("#mode-select"),
+    modeHint: $("#mode-hint"),
     playerInputs: $("#player-inputs"),
     addPlayer: $("#add-player"),
     startGame: $("#start-game"),
     game: $("#game"),
     roundCount: $("#round-count"),
+    modeBadge: $("#mode-badge"),
     standings: $("#standings"),
     history: $("#history"),
     winnerBanner: $("#winner-banner"),
@@ -597,25 +672,36 @@ function buildRulesHTML() {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch (e) { return null; }
   }
 
+  // ---------- Modus-Helfer ----------
+  function mode() { return MODES[state.mode] || MODES[DEFAULT_MODE]; }
+  function seq() { return mode().seq; }
+  function phaseDesc(num) {
+    const p = PHASES.find((x) => x.n === num);
+    return p ? p.desc : "Phase " + num;
+  }
+
   // ---------- Ableitungen ----------
   function rounds() {
     return state && state.players.length ? state.players[0].points.length : 0;
   }
-  // Aktuelle Phase eines Spielers = 1 + Anzahl geschaffter Phasen (max 10)
-  function currentPhase(p) {
-    const completed = completedCount(p);
-    return Math.min(completed + 1, MAX_PHASE);
-  }
+  // Anzahl abgeschlossener Phasen eines Spielers
   function completedCount(p) {
+    if (mode().auto) return Math.min(rounds(), seq().length);
     return p.done.filter(Boolean).length;
+  }
+  // Aktuell zu spielende Phasennummer (oder null, wenn alle geschafft)
+  function currentPhaseNumber(p) {
+    const idx = completedCount(p);
+    return idx >= seq().length ? null : seq()[idx];
   }
   function totalPoints(p) {
     return p.points.reduce((a, b) => a + (b || 0), 0);
   }
   function isFinished(p) {
-    return completedCount(p) >= MAX_PHASE;
+    if (mode().limit != null) return rounds() >= mode().limit;
+    return completedCount(p) >= seq().length;
   }
-  // Gewinner: hat Phase 10 geschafft; bei Gleichstand wenigste Punkte
+  // Sieger: hat alle Phasen geschafft (bzw. Rundenlimit erreicht); Gleichstand → wenigste Punkte
   function findWinner() {
     const finishers = state.players.filter(isFinished);
     if (!finishers.length) return null;
@@ -631,6 +717,19 @@ function buildRulesHTML() {
       el.views[tab.dataset.view].classList.add("is-active");
     });
   });
+
+  // ---------- Modus-Auswahl ----------
+  function fillModeSelect() {
+    el.modeSelect.innerHTML = Object.entries(MODES)
+      .map(([k, m]) => `<option value="${k}">${escapeHtml(m.label)}</option>`).join("");
+    el.modeSelect.value = DEFAULT_MODE;
+    updateModeHint();
+  }
+  function updateModeHint() {
+    const m = MODES[el.modeSelect.value] || MODES[DEFAULT_MODE];
+    el.modeHint.textContent = m.hint;
+  }
+  el.modeSelect.addEventListener("change", updateModeHint);
 
   // ---------- Setup ----------
   function addPlayerInput(name = "") {
@@ -668,7 +767,8 @@ function buildRulesHTML() {
       flash(el.startGame, "Mind. 2 Spieler");
       return;
     }
-    state = { players: names.map((name) => ({ name, points: [], done: [] })) };
+    const selectedMode = MODES[el.modeSelect.value] ? el.modeSelect.value : DEFAULT_MODE;
+    state = { mode: selectedMode, players: names.map((name) => ({ name, points: [], done: [] })) };
     save();
     render();
   }
@@ -681,25 +781,30 @@ function buildRulesHTML() {
     if (findWinner()) {
       if (!confirm("Das Spiel ist beendet. Trotzdem eine weitere Runde erfassen?")) return;
     }
+    const auto = mode().auto;
     el.dialogTitle.textContent = `Durchgang ${rounds() + 1} erfassen`;
     el.roundRows.innerHTML = state.players.map((p, i) => {
-      const ph = currentPhase(p);
+      const num = currentPhaseNumber(p);
       const finished = isFinished(p);
-      return `
-        <div class="round-row" data-i="${i}">
-          <div class="rr-name">${escapeHtml(p.name)}
-            <div class="rr-phase">${finished ? "Alle Phasen geschafft ✓" : "Aktuell: Phase " + ph}</div>
-          </div>
-          <input class="rr-points" type="number" inputmode="numeric" min="0" step="5"
-                 value="0" aria-label="Restpunkte ${escapeAttr(p.name)}" />
+      const phaseInfo = finished
+        ? "Alle Phasen geschafft ✓"
+        : `Phase ${num} – ${escapeHtml(phaseDesc(num))}`;
+      // Im Auto-Modus keine "geschafft"-Box (jeder rückt automatisch weiter)
+      const check = auto ? "" : `
           <label class="rr-check">
             <input type="checkbox" ${finished ? "disabled" : ""} />
-            Phase ${finished ? "✓" : ph + " ok"}
-          </label>
+            ${finished ? "✓" : "geschafft"}
+          </label>`;
+      return `
+        <div class="round-row${auto ? " no-check" : ""}" data-i="${i}">
+          <div class="rr-name">${escapeHtml(p.name)}
+            <div class="rr-phase">${phaseInfo}</div>
+          </div>
+          <input class="rr-points" type="number" inputmode="numeric" min="0" step="5"
+                 value="0" aria-label="Restpunkte ${escapeAttr(p.name)}" />${check}
         </div>`;
     }).join("");
 
-    // Punkte-Feld bei Fokus selektieren
     el.roundRows.querySelectorAll(".rr-points").forEach((inp) => {
       inp.addEventListener("focus", () => inp.select());
     });
@@ -710,13 +815,19 @@ function buildRulesHTML() {
   // Dialog-Schließen verarbeiten
   el.dialog.addEventListener("close", () => {
     if (el.dialog.returnValue !== "save") return;
+    const auto = mode().auto;
     const rows = el.roundRows.querySelectorAll(".round-row");
     rows.forEach((row) => {
       const i = +row.dataset.i;
       const p = state.players[i];
       const pts = Math.max(0, Math.round(+row.querySelector(".rr-points").value || 0));
-      const chk = row.querySelector('input[type="checkbox"]');
-      const done = chk.checked && !chk.disabled && !isFinished(p);
+      let done;
+      if (auto) {
+        done = true; // im Auto-Modus rückt jeder weiter
+      } else {
+        const chk = row.querySelector('input[type="checkbox"]');
+        done = chk && chk.checked && !chk.disabled && !isFinished(p);
+      }
       p.points.push(pts);
       p.done.push(done);
     });
@@ -743,11 +854,11 @@ function buildRulesHTML() {
 
   // ---------- Rendering ----------
   function render() {
-    // Setup vs. Spiel
     if (!state) {
       el.setup.classList.remove("hidden");
       el.game.classList.add("hidden");
       el.playerInputs.innerHTML = "";
+      fillModeSelect();
       addPlayerInput();
       addPlayerInput();
     } else {
@@ -756,7 +867,9 @@ function buildRulesHTML() {
       renderStandings();
       renderHistory();
       renderWinner();
-      el.roundCount.textContent = rounds();
+      const limit = mode().limit;
+      el.roundCount.textContent = limit ? `${rounds()} / ${limit}` : rounds();
+      el.modeBadge.textContent = mode().label;
       el.undoRound.disabled = rounds() === 0;
       el.undoRound.style.opacity = rounds() === 0 ? 0.5 : 1;
     }
@@ -764,7 +877,7 @@ function buildRulesHTML() {
 
   function renderStandings() {
     const winner = findWinner();
-    // Sortierung: zuerst nach geschafften Phasen (absteigend), dann nach Punkten (aufsteigend)
+    const total = seq().length;
     const ranked = state.players
       .map((p) => ({ p, total: totalPoints(p), comp: completedCount(p) }))
       .sort((a, b) => b.comp - a.comp || a.total - b.total);
@@ -775,15 +888,15 @@ function buildRulesHTML() {
       </tr></thead>`;
     const body = ranked.map((r, i) => {
       const p = r.p;
-      const finished = isFinished(p);
-      const phaseLabel = finished
+      const num = currentPhaseNumber(p);
+      const phaseLabel = (num == null)
         ? `<span class="phase-pill phase-done">Fertig ✓</span>`
-        : `<span class="phase-pill">Phase ${currentPhase(p)}</span>`;
+        : `<span class="phase-pill" title="${escapeAttr(phaseDesc(num))}">Phase ${num}</span>`;
       return `
         <tr class="${winner === p ? "is-winner" : ""}">
           <td class="rank">${i + 1}</td>
           <td class="pname">${escapeHtml(p.name)}</td>
-          <td class="phase-cell">${phaseLabel} <small style="color:var(--muted)">(${r.comp}/10)</small></td>
+          <td class="phase-cell">${phaseLabel} <small style="color:var(--muted)">(${r.comp}/${total})</small></td>
           <td class="total">${r.total}</td>
         </tr>`;
     }).join("");
@@ -797,6 +910,7 @@ function buildRulesHTML() {
         `<tbody><tr><td class="empty">Noch keine Runde erfasst. Tippe auf „+ Runde erfassen“.</td></tr></tbody>`;
       return;
     }
+    const auto = mode().auto;
     const head = `<thead><tr><th>Runde</th>${
       state.players.map((p) => `<th>${escapeHtml(p.name)}</th>`).join("")
     }</tr></thead>`;
@@ -806,19 +920,23 @@ function buildRulesHTML() {
       body += `<tr><td class="rnd">${r + 1}</td>${
         state.players.map((p) => {
           const pts = p.points[r] ?? 0;
-          const done = p.done[r];
+          let sub;
+          if (auto) {
+            sub = `Phase ${seq()[Math.min(r, seq().length - 1)]}`;
+          } else {
+            sub = p.done[r] ? '<span class="ok">Phase ✓</span>' : "Phase –";
+          }
           return `<td>
             <span class="cell-pts">${pts}</span>
-            <div class="cell-phase">${done ? '<span class="ok">Phase ✓</span>' : "Phase –"}</div>
+            <div class="cell-phase">${sub}</div>
           </td>`;
         }).join("")
       }</tr>`;
     }
-    // Summenzeile
     body += `<tr style="background:var(--bg-2)"><td class="rnd">Σ</td>${
       state.players.map((p) =>
         `<td><span class="cell-pts" style="color:var(--gold-2)">${totalPoints(p)}</span>
-         <div class="cell-phase">${completedCount(p)}/10 Phasen</div></td>`).join("")
+         <div class="cell-phase">${completedCount(p)}/${seq().length} Phasen</div></td>`).join("")
     }</tr>`;
 
     el.history.innerHTML = head + "<tbody>" + body + "</tbody>";
@@ -828,9 +946,13 @@ function buildRulesHTML() {
     const winner = findWinner();
     if (!winner) { el.winnerBanner.classList.add("hidden"); return; }
     el.winnerBanner.classList.remove("hidden");
-    el.winnerBanner.innerHTML =
-      `🎉 <strong>${escapeHtml(winner.name)}</strong> hat alle 10 Phasen geschafft und gewinnt mit
-       ${totalPoints(winner)} Punkten!`;
+    const pts = totalPoints(winner);
+    const msg = mode().limit
+      ? `🎉 <strong>${escapeHtml(winner.name)}</strong> gewinnt nach ${mode().limit} Durchgängen
+         mit ${pts} Punkten!`
+      : `🎉 <strong>${escapeHtml(winner.name)}</strong> hat alle ${seq().length} Phasen geschafft
+         und gewinnt mit ${pts} Punkten!`;
+    el.winnerBanner.innerHTML = msg;
   }
 
   // ---------- Helfer ----------
